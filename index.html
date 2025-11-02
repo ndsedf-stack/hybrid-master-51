@@ -27,19 +27,12 @@
     <section id="workout-container"></section>
   </main>
 
-  <!-- 🧠 Script dynamique sans "module" -->
+  <!-- 🧠 Chargement dynamique -->
   <script>
-    // Charger main.js dynamiquement
     const script = document.createElement("script");
     script.src = "https://ndsedf-stack.github.io/hybrid-master-51/scripts/main.js";
-    script.onload = () => {
-      console.log("✅ Hybrid Master 51 chargé sans module !");
-      alert("✅ Hybrid Master 51 chargé avec succès !");
-    };
-    script.onerror = (e) => {
-      console.error("❌ Erreur de chargement de main.js :", e);
-      alert("❌ Erreur de chargement du script principal !");
-    };
+    script.onload = () => console.log("✅ Hybrid Master 51 chargé sans module !");
+    script.onerror = (e) => console.error("❌ Erreur de chargement du script principal :", e);
     document.body.appendChild(script);
   </script>
 
