@@ -1,12 +1,12 @@
 // ==================================
-// TIMER MANAGER
+// TIMER MANAGER – version globale
 // ==================================
 
 let timer;
 let remaining = 0;
 let active = false;
 
-export function startTimer(seconds, onTick, onFinish) {
+window.startTimer = function (seconds, onTick, onFinish) {
   clearInterval(timer);
   remaining = seconds;
   active = true;
@@ -21,13 +21,13 @@ export function startTimer(seconds, onTick, onFinish) {
       if (onTick) onTick(remaining);
     }
   }, 1000);
-}
+};
 
-export function stopTimer() {
+window.stopTimer = function () {
   clearInterval(timer);
   active = false;
-}
+};
 
-export function isTimerActive() {
+window.isTimerActive = function () {
   return active;
-}
+};
