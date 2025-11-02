@@ -2,15 +2,22 @@
 // HYBRID MASTER 51 — MAIN INITIALIZER
 // ==================================
 
-// ✅ Cette ligne va afficher une alerte quand le JS est bien chargé
-alert("✅ Hybrid Master 51 est chargé !");
+console.log("✅ Hybrid Master 51 — script principal chargé.");
 
-import { renderWorkout } from "./ui/workout-renderer.js";
-import { renderNavigation } from "./ui/navigation-ui.js";
+// Vérifie que les fonctions existent
+if (typeof renderWorkout === "undefined" || typeof renderNavigation === "undefined") {
+  alert("⚠️ Les fonctions de rendu ne sont pas encore chargées !");
+}
 
+// Fonction principale
 window.addEventListener("DOMContentLoaded", () => {
   const nav = document.getElementById("navigation");
   const container = document.getElementById("workout-container");
+
+  if (!nav || !container) {
+    console.error("❌ Éléments #navigation ou #workout-container introuvables.");
+    return;
+  }
 
   function updateWorkout() {
     const weekSelect = document.getElementById("week-select");
@@ -20,9 +27,19 @@ window.addEventListener("DOMContentLoaded", () => {
 
     const week = parseInt(weekSelect.value);
     const day = daySelect.value;
-    renderWorkout(container, week, day);
+
+    if (typeof renderWorkout === "function") {
+      renderWorkout(container, week, day);
+    } else {
+      console.warn("⚠️ renderWorkout n'est pas défini !");
+    }
   }
 
-  renderNavigation(nav, updateWorkout);
+  if (typeof renderNavigation === "function") {
+    renderNavigation(nav, updateWorkout);
+  } else {
+    console.warn("⚠️ renderNavigation n'est pas défini !");
+  }
+
   updateWorkout();
 });
