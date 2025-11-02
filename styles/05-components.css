@@ -13,7 +13,7 @@ button:hover, select:hover {
 }
 
 .exercise-card {
-  background: #111418;
+  background #111418;
   border-left: 4px solid var(--color-secondary);
   margin: 1rem 0;
   padding: 1rem;
