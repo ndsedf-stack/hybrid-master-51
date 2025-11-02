@@ -110,5 +110,77 @@
   <!-- ✅ JAVASCRIPT - TYPE MODULE OBLIGATOIRE -->
   <script type="module" src="./scripts/app.js"></script>
   
+  <!-- 🚨 CODE DE TEST ULTRA SIMPLE POUR LES BOUTONS -->
+  <script>
+  console.log("=== TEST ULTRA SIMPLE DES BOUTONS ===");
+  
+  // Attendre que tout soit chargé
+  setTimeout(function() {
+    console.log("🔍 Recherche des boutons...");
+    
+    const prevBtn = document.getElementById('prevWeek');
+    const nextBtn = document.getElementById('nextWeek');
+    
+    console.log("Bouton Précédent:", prevBtn);
+    console.log("Bouton Suivant:", nextBtn);
+    
+    // Ajouter les événements SIMPLES
+    if (prevBtn) {
+      prevBtn.addEventListener('click', function() {
+        console.log("🎯 BOUTON PRÉCÉDENT CLIQUE !");
+        alert("✅ Bouton Précédent fonctionne !");
+        
+        // Changer la semaine affichée
+        const weekDisplay = document.getElementById('weekDisplay');
+        if (weekDisplay) {
+          const currentWeek = parseInt(weekDisplay.textContent.replace('Semaine ', '')) || 1;
+          if (currentWeek > 1) {
+            weekDisplay.textContent = 'Semaine ' + (currentWeek - 1);
+          }
+        }
+      });
+      console.log("✅ Événement ajouté à Précédent");
+    }
+    
+    if (nextBtn) {
+      nextBtn.addEventListener('click', function() {
+        console.log("🎯 BOUTON SUIVANT CLIQUE !");
+        alert("✅ Bouton Suivant fonctionne !");
+        
+        // Changer la semaine affichée
+        const weekDisplay = document.getElementById('weekDisplay');
+        if (weekDisplay) {
+          const currentWeek = parseInt(weekDisplay.textContent.replace('Semaine ', '')) || 1;
+          if (currentWeek < 26) {
+            weekDisplay.textContent = 'Semaine ' + (currentWeek + 1);
+          }
+        }
+      });
+      console.log("✅ Événement ajouté à Suivant");
+    }
+    
+    // Afficher un message de statut
+    if (prevBtn && nextBtn) {
+      console.log("🎉 TOUT EST CONFIGURÉ - Les boutons devraient fonctionner !");
+    } else {
+      console.error("❌ PROBLEME : Boutons non trouvés");
+    }
+    
+  }, 1000); // Délai de 1 seconde pour être sûr que tout est chargé
+  
+  // Test manuel supplémentaire
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log("📄 DOM chargé - vérification des boutons...");
+    
+    const testPrev = document.getElementById('prevWeek');
+    const testNext = document.getElementById('nextWeek');
+    
+    if (!testPrev || !testNext) {
+      console.error("🚨 CRITIQUE: Les boutons n'existent pas dans le DOM");
+      console.log("Éléments avec ID dans la page:", document.querySelectorAll('[id]'));
+    }
+  });
+  </script>
+  
 </body>
 </html>
