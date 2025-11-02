@@ -1,12 +1,13 @@
 // ==================================
-// WORKOUT RENDERER
+// WORKOUT RENDERER – version globale
 // ==================================
-import { getWorkout } from "../modules/workout-session.js";
-import { startTimer } from "../modules/timer-manager.js";
-import { saveSessionStat } from "../modules/statistics-engine.js";
-
-export function renderWorkout(container, week, day) {
+window.renderWorkout = function (container, week, day) {
   container.innerHTML = "";
+  if (!window.getWorkout) {
+    container.textContent = "Erreur : module de séance manquant.";
+    return;
+  }
+
   const workout = getWorkout(week, day);
   if (!workout) {
     container.textContent = "Aucune séance trouvée.";
@@ -30,17 +31,20 @@ export function renderWorkout(container, week, day) {
       <div class="exercise-progress"><div class="exercise-progress-bar"></div></div>
     `;
 
-    card.querySelector(".start-rest").addEventListener("click", () => {
-      const progress = card.querySelector(".exercise-progress-bar");
-      startTimer(60, (s) => {
-        const ratio = ((60 - s) / 60) * 100;
-        progress.style.width = `${ratio}%`;
-      }, () => {
-        progress.style.width = "100%";
-        saveSessionStat(day, week, [ex.name]);
+    const btn = card.querySelector(".start-rest");
+    const progress = card.querySelector(".exercise-progress-bar");
+
+    if (window.startTimer && window.saveSessionStat) {
+      btn.addEventListener("click", () => {
+        startTimer(60, (s) => {
+          progress.style.width = `${((60 - s) / 60) * 100}%`;
+        }, () => {
+          progress.style.width = "100%";
+          saveSessionStat(day, week, [ex.name]);
+        });
       });
-    });
+    }
 
     container.appendChild(card);
   });
-}
+};
