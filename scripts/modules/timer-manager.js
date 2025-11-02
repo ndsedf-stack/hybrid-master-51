@@ -1,12 +1,13 @@
 // ==================================
-// TIMER MANAGER – version globale
+// TIMER MANAGER
 // ==================================
+// Gère le chronomètre de repos entre les exercices.
 
-let timer;
+let timer = null;
 let remaining = 0;
 let active = false;
 
-window.startTimer = function (seconds, onTick, onFinish) {
+export function startTimer(seconds, onTick, onFinish) {
   clearInterval(timer);
   remaining = seconds;
   active = true;
@@ -21,13 +22,13 @@ window.startTimer = function (seconds, onTick, onFinish) {
       if (onTick) onTick(remaining);
     }
   }, 1000);
-};
+}
 
-window.stopTimer = function () {
+export function stopTimer() {
   clearInterval(timer);
   active = false;
-};
+}
 
-window.isTimerActive = function () {
+export function isTimerActive() {
   return active;
-};
+}
