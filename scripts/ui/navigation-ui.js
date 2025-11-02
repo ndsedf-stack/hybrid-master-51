@@ -1,14 +1,18 @@
 // ==================================
-// NAVIGATION UI
+// NAVIGATION UI – version globale
 // ==================================
-import { PROGRAM_DATA } from "../core/program-data.js";
+window.renderNavigation = function (container, onChange) {
+  if (!window.PROGRAM_DATA) {
+    container.textContent = "Erreur : données du programme introuvables.";
+    return;
+  }
 
-export function renderNavigation(container, onChange) {
   const nav = document.createElement("div");
   nav.classList.add("nav");
 
   const weekSelect = document.createElement("select");
   weekSelect.id = "week-select";
+
   for (let i = 1; i <= PROGRAM_DATA.totalWeeks; i++) {
     const opt = document.createElement("option");
     opt.value = i;
@@ -30,4 +34,4 @@ export function renderNavigation(container, onChange) {
 
   nav.append(weekSelect, daySelect);
   container.appendChild(nav);
-}
+};
