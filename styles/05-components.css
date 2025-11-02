@@ -1,1 +1,31 @@
+select, button {
+  background-color: var(--color-accent);
+  color: var(--color-secondary);
+  border-radius: 5px;
+  padding: 0.5rem 1rem;
+  margin: 0.5rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
 
+button:hover, select:hover {
+  background-color: var(--color-primary);
+}
+
+.exercise-card {
+  background: #111418;
+  border-left: 4px solid var(--color-secondary);
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: 6px;
+}
+
+.exercise-title {
+  font-size: 1.2rem;
+  color: var(--color-secondary);
+}
+
+.exercise-details {
+  font-size: 0.9rem;
+  color: var(--color-text);
+}
