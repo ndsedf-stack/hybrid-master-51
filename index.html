@@ -49,24 +49,6 @@
   <script type="module" src="scripts/utils/dom-helpers.js"></script>
 
   <!-- APP INIT -->
-  <script type="module">
-    import { renderWorkout } from './scripts/ui/workout-renderer.js';
-    import { renderNavigation } from './scripts/ui/navigation-ui.js';
-
-    const app = document.getElementById('app');
-    const nav = document.getElementById('navigation');
-    const container = document.getElementById('workout-container');
-
-    renderNavigation(nav, updateWorkout);
-
-    function updateWorkout() {
-      const week = parseInt(document.getElementById('week-select').value);
-      const day = document.getElementById('day-select').value;
-      renderWorkout(container, week, day);
-    }
-
-    // Initial render
-    document.addEventListener('DOMContentLoaded', updateWorkout);
-  </script>
+  <script type="module" src="scripts/main.js"></script>
 </body>
 </html>
