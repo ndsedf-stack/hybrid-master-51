@@ -1,358 +1,294 @@
 // ===================================================================
-// HYBRID MASTER 51 - APPLICATION PRINCIPALE FONCTIONNELLE
+// HYBRID MASTER 51 - APPLICATION PRINCIPALE CORRIGÉE
 // ===================================================================
 
-import { PROGRAM_DATA, getBlockForWeek, isDeloadWeek, getBicepsExercise } from './core/program-data.js';
+import { PROGRAM_DATA } from './core/program-data.js';
+import { ProgressionEngine } from './modules/progression-engine.js';
 
 class HybridMasterApp {
   constructor() {
     this.currentWeek = 1;
+    this.selectedDay = null;
+    this.programData = PROGRAM_DATA;
+    this.progressionEngine = new ProgressionEngine();
+    
     this.init();
   }
 
   init() {
-    console.log('🚀 Initialisation Hybrid Master 51...');
-    this.renderWeekSelector();
-    this.renderWorkouts();
-    this.attachEventListeners();
-    console.log('✅ Application prête !');
+    console.log('🚀 Hybrid Master 51 - Initialisation...');
+    
+    // Vérifier que les données sont chargées
+    if (!this.programData || !this.programData.workouts) {
+      console.error('❌ Erreur: Données du programme non chargées');
+      return;
+    }
+    
+    console.log('✅ Programme chargé:', this.programData);
+    
+    // Initialiser l'interface
+    this.initUI();
+    this.setupEventListeners();
+    this.renderWeek(this.currentWeek);
+    
+    console.log('✅ Application initialisée avec succès');
   }
 
-  /**
-   * Rend le sélecteur de semaines
-   */
-  renderWeekSelector() {
-    const container = document.getElementById('week-selector');
-    if (!container) return;
+  initUI() {
+    // Générer la grille des semaines
+    this.renderWeekGrid();
+  }
 
-    let html = '<div class="week-buttons">';
+  setupEventListeners() {
+    // Navigation semaines
+    const prevBtn = document.getElementById('prevWeek');
+    const nextBtn = document.getElementById('nextWeek');
     
-    for (let week = 1; week <= PROGRAM_DATA.totalWeeks; week++) {
-      const isActive = week === this.currentWeek;
-      const isDeload = isDeloadWeek(week);
-      const classes = `week-btn ${isActive ? 'active' : ''} ${isDeload ? 'deload' : ''}`;
+    if (prevBtn) {
+      prevBtn.addEventListener('click', () => this.changeWeek(-1));
+    }
+    
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => this.changeWeek(1));
+    }
+  }
+
+  renderWeekGrid() {
+    const weekGrid = document.getElementById('weekGrid');
+    if (!weekGrid) return;
+    
+    let html = '';
+    for (let i = 1; i <= 26; i++) {
+      const blockInfo = this.getBlockForWeek(i);
+      const isDeload = this.isDeloadWeek(i);
+      const activeClass = i === this.currentWeek ? 'active' : '';
+      const deloadClass = isDeload ? 'deload' : '';
       
       html += `
-        <button class="${classes}" data-week="${week}">
-          S${week}
+        <button 
+          class="week-btn ${activeClass} ${deloadClass}" 
+          data-week="${i}"
+          onclick="window.app.selectWeek(${i})"
+        >
+          S${i}
         </button>
       `;
     }
     
-    html += '</div>';
-    
-    // Ajouter info bloc
-    const block = getBlockForWeek(this.currentWeek);
-    if (block) {
-      html += `
-        <div class="block-info">
-          <span class="block-badge">
-            ${block.name}
-          </span>
-          <div style="margin-top: 10px; color: #94a3b8; font-size: 0.9rem;">
-            Technique : ${block.technique} • ${block.focus}
-          </div>
-        </div>
-      `;
-    }
-    
-    container.innerHTML = html;
+    weekGrid.innerHTML = html;
   }
 
-  /**
-   * Rend les séances de la semaine
-   */
-  renderWorkouts() {
-    const container = document.getElementById('workouts-container');
-    if (!container) return;
+  selectWeek(week) {
+    this.currentWeek = week;
+    this.renderWeek(week);
+    this.renderWeekGrid(); // Refresh pour mettre à jour le bouton actif
+  }
 
-    const workouts = PROGRAM_DATA.weeklySchedule;
+  changeWeek(delta) {
+    const newWeek = this.currentWeek + delta;
+    if (newWeek >= 1 && newWeek <= 26) {
+      this.selectWeek(newWeek);
+    }
+  }
+
+  renderWeek(weekNumber) {
+    console.log(`📅 Affichage semaine ${weekNumber}`);
+    
+    // Mettre à jour l'affichage de la semaine
+    const weekDisplay = document.getElementById('weekDisplay');
+    const blockBadge = document.getElementById('blockBadge');
+    
+    if (weekDisplay) {
+      weekDisplay.textContent = `Semaine ${weekNumber}`;
+    }
+    
+    const blockInfo = this.getBlockForWeek(weekNumber);
+    if (blockBadge) {
+      blockBadge.textContent = `Bloc ${blockInfo.block}`;
+      blockBadge.className = 'block-badge block-' + blockInfo.block;
+    }
+    
+    // Afficher les séances
+    this.renderWorkoutDays(weekNumber);
+    
+    // Mettre à jour les stats
+    this.updateStats(weekNumber);
+  }
+
+  renderWorkoutDays(weekNumber) {
+    const workoutDays = document.getElementById('workoutDays');
+    if (!workoutDays) return;
+    
+    const days = ['dimanche', 'mardi', 'jeudi', 'maison'];
+    const dayLabels = {
+      'dimanche': 'Dimanche',
+      'mardi': 'Mardi',
+      'jeudi': 'Jeudi',
+      'maison': 'Maison'
+    };
+    
     let html = '';
-
-    Object.entries(workouts).forEach(([day, workout]) => {
-      html += this.renderWorkoutCard(day, workout);
-    });
-
-    container.innerHTML = html;
-  }
-
-  /**
-   * Rend une carte de séance
-   */
-  renderWorkoutCard(day, workout) {
-    const dayIcons = {
-      dimanche: '🏋️',
-      mardi: '💪',
-      jeudi: '🔥',
-      maison: '🏠'
-    };
-
-    const dayNames = {
-      dimanche: 'Dimanche',
-      mardi: 'Mardi',
-      jeudi: 'Jeudi',
-      maison: 'Maison'
-    };
-
-    let html = `
-      <div class="workout-card" data-day="${day}">
-        <div class="workout-header">
-          <h3 class="workout-day">
-            <span class="workout-icon">${dayIcons[day]}</span>
-            ${dayNames[day]}
-          </h3>
-          <div class="workout-duration">
-            <span>⏱️</span>
-            <span>${workout.duration}</span>
-          </div>
-        </div>
-    `;
-
-    // Échauffement (sauf maison)
-    if (day !== 'maison') {
+    
+    days.forEach(day => {
+      const workout = this.programData.workouts[day];
+      if (!workout) return;
+      
+      const exerciseCount = workout.exercises.length;
+      const estimatedTime = this.calculateWorkoutTime(workout);
+      
       html += `
-        <div class="alert alert-info">
-          <span class="alert-icon">🔥</span>
-          <div class="alert-content">
-            <div class="alert-title">Échauffement</div>
-            <ul style="margin: 0.5rem 0 0 1.5rem; font-size: 0.85rem;">
-              <li>5-10min cardio léger</li>
-              <li>Mobilité articulaire</li>
-              <li>2 séries échauffement/exercice</li>
-            </ul>
+        <div class="workout-card" onclick="window.app.showWorkoutDetails('${day}', ${weekNumber})">
+          <div class="workout-card-header">
+            <h3>${dayLabels[day]}</h3>
+            <span class="workout-badge">${exerciseCount} exercices</span>
           </div>
+          <div class="workout-card-body">
+            <p class="workout-time">⏱️ ~${estimatedTime} min</p>
+            <p class="workout-focus">${workout.focus || 'Séance complète'}</p>
+          </div>
+          <button class="btn-primary">Voir les exercices →</button>
         </div>
       `;
-    }
+    });
+    
+    workoutDays.innerHTML = html;
+  }
 
-    // Exercices
-    html += '<ul class="exercise-list">';
+  showWorkoutDetails(day, weekNumber) {
+    console.log(`📋 Affichage détails: ${day}, semaine ${weekNumber}`);
+    
+    const detailsContainer = document.getElementById('workoutDetails');
+    if (!detailsContainer) return;
+    
+    const workout = this.programData.workouts[day];
+    if (!workout) return;
+    
+    const isDeload = this.isDeloadWeek(weekNumber);
+    const blockInfo = this.getBlockForWeek(weekNumber);
+    
+    let html = `
+      <div class="workout-details-header">
+        <h2>Séance ${day.charAt(0).toUpperCase() + day.slice(1)}</h2>
+        <p class="workout-details-meta">
+          Semaine ${weekNumber} - Bloc ${blockInfo.block}
+          ${isDeload ? '<span class="badge-deload">DELOAD -40%</span>' : ''}
+        </p>
+      </div>
+      
+      <div class="exercises-list">
+    `;
     
     workout.exercises.forEach((exercise, index) => {
-      html += this.renderExercise(exercise, index);
+      // Calculer les poids avec progression
+      const calculatedExercise = this.progressionEngine.calculateExercise(
+        exercise,
+        weekNumber,
+        blockInfo,
+        isDeload
+      );
+      
+      html += this.renderExerciseCard(calculatedExercise, index + 1);
     });
     
-    html += '</ul></div>';
-
-    return html;
-  }
-
-  /**
-   * Rend un exercice
-   */
-  renderExercise(exercise, index) {
-    const weight = this.calculateWeight(exercise);
-    const isDeload = isDeloadWeek(this.currentWeek);
-    
-    // Gestion rotation biceps
-    let exerciseName = exercise.name;
-    if (exercise.rotation && exercise.name === 'Biceps Rotation') {
-      exerciseName = getBicepsExercise(this.currentWeek);
-    }
-
-    let html = `
-      <li class="exercise-item ${exercise.superset ? 'superset' : ''}" data-index="${index}">
-        <div class="exercise-name">${exerciseName}</div>
-        <div class="exercise-details">
-    `;
-
-    // Sets
-    html += `
-      <span class="detail-badge">
-        <span>📊</span>
-        <span>${exercise.sets} séries</span>
-      </span>
-    `;
-
-    // Reps
-    html += `
-      <span class="detail-badge">
-        <span>🔢</span>
-        <span>${exercise.reps}</span>
-      </span>
-    `;
-
-    // Poids
-    if (weight) {
-      html += `
-        <span class="detail-badge">
-          <span>💪</span>
-          <span>${weight}</span>
-        </span>
-      `;
-    }
-
-    // Repos
-    if (exercise.rest) {
-      html += `
-        <span class="detail-badge">
-          <span>⏱️</span>
-          <span>${exercise.rest}</span>
-        </span>
-      `;
-    }
-
     html += '</div>';
-
-    // Technique ou note
-    if (isDeload) {
-      html += `
-        <div class="technique-badge" style="background: rgba(251, 191, 36, 0.2); color: #fbbf24;">
-          DELOAD WEEK (-40%)
-        </div>
-      `;
-    } else if (exercise.technique) {
-      html += `
-        <div class="technique-badge">
-          ${exercise.technique}
-        </div>
-      `;
-    }
-
-    if (exercise.note) {
-      html += `
-        <div style="margin-top: 8px; font-size: 0.85rem; color: #94a3b8; font-style: italic;">
-          ℹ️ ${exercise.note}
-        </div>
-      `;
-    }
-
-    html += '</li>';
-
-    return html;
-  }
-
-  /**
-   * Calcule le poids pour la semaine actuelle
-   */
-  calculateWeight(exercise) {
-    if (exercise.startWeight === 'Poids du corps') {
-      return 'Poids du corps';
-    }
-
-    const block = getBlockForWeek(this.currentWeek);
-    if (!block) return `${exercise.startWeight}kg`;
-
-    // Calculer le nombre de cycles de progression
-    const weekInBlock = this.currentWeek - block.weeks[0];
-    const cycles = Math.floor(weekInBlock / exercise.progressionFrequency);
     
-    // Calculer le poids
-    let weight = exercise.startWeight + (cycles * exercise.increment);
-
-    // Appliquer deload si nécessaire
-    if (isDeloadWeek(this.currentWeek)) {
-      weight = weight * (1 - PROGRAM_DATA.deloadReduction);
-    }
-
-    return `${weight.toFixed(1)}kg`;
+    detailsContainer.innerHTML = html;
+    detailsContainer.scrollIntoView({ behavior: 'smooth' });
   }
 
-  /**
-   * Attache les event listeners
-   */
-  attachEventListeners() {
-    // Boutons de semaine
-    document.addEventListener('click', (e) => {
-      if (e.target.classList.contains('week-btn')) {
-        const week = parseInt(e.target.dataset.week);
-        this.selectWeek(week);
+  renderExerciseCard(exercise, number) {
+    const weight = exercise.weight > 0 ? `${exercise.weight} kg` : 'Poids du corps';
+    const rest = exercise.rest || '60-90s';
+    const technique = exercise.technique || '';
+    
+    return `
+      <div class="exercise-card">
+        <div class="exercise-number">${number}</div>
+        <div class="exercise-content">
+          <h3 class="exercise-name">${exercise.name}</h3>
+          
+          <div class="exercise-specs">
+            <span class="spec-item">
+              <strong>Sets:</strong> ${exercise.sets}
+            </span>
+            <span class="spec-item">
+              <strong>Reps:</strong> ${exercise.reps}
+            </span>
+            <span class="spec-item">
+              <strong>Poids:</strong> ${weight}
+            </span>
+            <span class="spec-item">
+              <strong>Repos:</strong> ${rest}
+            </span>
+          </div>
+          
+          ${technique ? `
+            <div class="exercise-technique">
+              <span class="technique-badge">${technique}</span>
+            </div>
+          ` : ''}
+          
+          ${exercise.notes ? `
+            <div class="exercise-notes">
+              💡 ${exercise.notes}
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  calculateWorkoutTime(workout) {
+    // Estimation simple: 3-4 min par set
+    let totalSets = 0;
+    workout.exercises.forEach(ex => {
+      totalSets += ex.sets;
+    });
+    return Math.round(totalSets * 3.5);
+  }
+
+  updateStats(weekNumber) {
+    const workout = this.programData.workouts;
+    let totalExercises = 0;
+    let totalVolume = 0;
+    let totalTime = 0;
+    
+    ['dimanche', 'mardi', 'jeudi', 'maison'].forEach(day => {
+      if (workout[day]) {
+        totalExercises += workout[day].exercises.length;
+        totalTime += this.calculateWorkoutTime(workout[day]);
+        
+        workout[day].exercises.forEach(ex => {
+          totalVolume += ex.sets * parseInt(ex.reps || 10);
+        });
       }
     });
-
-    // Bouton démarrer séance
-    const startBtn = document.getElementById('start-workout-btn');
-    if (startBtn) {
-      startBtn.addEventListener('click', () => {
-        alert('🚀 Mode séance à venir ! Fonctionnalité en développement.');
-      });
-    }
-
-    // Bouton statistiques
-    const statsBtn = document.getElementById('stats-btn');
-    if (statsBtn) {
-      statsBtn.addEventListener('click', () => {
-        this.showStatistics();
-      });
-    }
-
-    // Bouton paramètres
-    const settingsBtn = document.getElementById('settings-btn');
-    if (settingsBtn) {
-      settingsBtn.addEventListener('click', () => {
-        alert('⚙️ Paramètres à venir !');
-      });
-    }
-  }
-
-  /**
-   * Sélectionne une semaine
-   */
-  selectWeek(weekNumber) {
-    this.currentWeek = weekNumber;
-    this.renderWeekSelector();
-    this.renderWorkouts();
     
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  /**
-   * Affiche les statistiques
-   */
-  showStatistics() {
-    const stats = this.calculateStatistics();
+    // Mettre à jour l'affichage
+    const volumeEl = document.getElementById('totalVolume');
+    const exercisesEl = document.getElementById('totalExercises');
+    const timeEl = document.getElementById('estimatedTime');
     
-    let html = `
-      <div style="background: rgba(15, 23, 42, 0.95); padding: 20px; border-radius: 15px; max-width: 500px; margin: 20px auto;">
-        <h3 style="color: #00d4aa; margin-bottom: 20px;">📊 Statistiques Semaine ${this.currentWeek}</h3>
-    `;
-
-    Object.entries(stats).forEach(([muscle, sets]) => {
-      const percentage = (sets / stats.total) * 100;
-      html += `
-        <div style="margin-bottom: 15px;">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-            <span style="color: #e2e8f0; font-weight: 600;">${muscle}</span>
-            <span style="color: #00d4aa;">${sets} séries</span>
-          </div>
-          <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
-            <div style="width: ${percentage}%; height: 100%; background: linear-gradient(90deg, #00d4aa, #3b82f6);"></div>
-          </div>
-        </div>
-      `;
-    });
-
-    html += '</div>';
-
-    alert('Statistiques calculées ! Voir console pour plus de détails.');
-    console.log('📊 Statistiques:', stats);
+    if (volumeEl) volumeEl.textContent = totalVolume + ' reps';
+    if (exercisesEl) exercisesEl.textContent = totalExercises;
+    if (timeEl) timeEl.textContent = totalTime + ' min';
   }
 
-  /**
-   * Calcule les statistiques de volume
-   */
-  calculateStatistics() {
-    const stats = {};
-    let total = 0;
+  getBlockForWeek(week) {
+    if (week <= 6) return { block: 1, technique: 'Tempo 3-1-2' };
+    if (week <= 12) return { block: 2, technique: 'Rest-Pause' };
+    if (week <= 18) return { block: 3, technique: 'Drop-sets + Myo-reps' };
+    return { block: 4, technique: 'Clusters + Partials' };
+  }
 
-    Object.values(PROGRAM_DATA.weeklySchedule).forEach(workout => {
-      workout.exercises.forEach(exercise => {
-        exercise.muscles.forEach(muscle => {
-          if (!stats[muscle]) stats[muscle] = 0;
-          stats[muscle] += exercise.sets;
-          total += exercise.sets;
-        });
-      });
-    });
-
-    stats.total = total;
-    return stats;
+  isDeloadWeek(week) {
+    return [6, 12, 18, 24, 26].includes(week);
   }
 }
 
-// Initialiser l'application au chargement du DOM
+// ✅ INITIALISATION AUTOMATIQUE
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('🎯 DOM chargé - Démarrage application');
   window.app = new HybridMasterApp();
 });
 
