@@ -1,20 +1,22 @@
 // ==================================
-// STATISTICS ENGINE – version globale
+// STATISTICS ENGINE
 // ==================================
+// Gère la sauvegarde, la récupération et le suivi
+// des statistiques d'entraînement via localStorage.
 
 const statsKey = "hm51_stats";
 
-window.saveSessionStat = function (day, week, completedExercises) {
+export function saveSessionStat(day, week, completedExercises) {
   const stats = JSON.parse(localStorage.getItem(statsKey)) || [];
   stats.push({ day, week, completedExercises, date: new Date().toISOString() });
   localStorage.setItem(statsKey, JSON.stringify(stats));
-};
+}
 
-window.getStats = function () {
+export function getStats() {
   return JSON.parse(localStorage.getItem(statsKey)) || [];
-};
+}
 
-window.getWeeklyProgression = function () {
+export function getWeeklyProgression() {
   const stats = getStats();
   const byWeek = {};
 
@@ -27,4 +29,4 @@ window.getWeeklyProgression = function () {
     week: parseInt(week),
     sessions
   }));
-};
+}
