@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HYBRID MASTER 51 — Test</title>
+  <title>HYBRID MASTER 51</title>
 
   <!-- STYLES -->
   <link rel="stylesheet" href="styles/01-reset.css">
@@ -27,9 +27,21 @@
     <section id="workout-container"></section>
   </main>
 
-  <!-- 🔧 TEST JAVASCRIPT -->
+  <!-- 🧠 Script dynamique sans "module" -->
   <script>
-    alert("✅ JavaScript fonctionne, mais les modules ne sont pas encore chargés !");
+    // Charger main.js dynamiquement
+    const script = document.createElement("script");
+    script.src = "https://ndsedf-stack.github.io/hybrid-master-51/scripts/main.js";
+    script.onload = () => {
+      console.log("✅ Hybrid Master 51 chargé sans module !");
+      alert("✅ Hybrid Master 51 chargé avec succès !");
+    };
+    script.onerror = (e) => {
+      console.error("❌ Erreur de chargement de main.js :", e);
+      alert("❌ Erreur de chargement du script principal !");
+    };
+    document.body.appendChild(script);
   </script>
+
 </body>
 </html>
