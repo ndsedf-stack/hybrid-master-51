@@ -1,27 +1,29 @@
 // ==================================
 // MODAL MANAGER
 // ==================================
-export function showModal(message) {
-  const overlay = document.createElement("div");
-  overlay.style.position = "fixed";
-  overlay.style.top = 0;
-  overlay.style.left = 0;
-  overlay.style.width = "100%";
-  overlay.style.height = "100%";
-  overlay.style.background = "rgba(0,0,0,0.7)";
-  overlay.style.display = "flex";
-  overlay.style.alignItems = "center";
-  overlay.style.justifyContent = "center";
-  overlay.style.zIndex = "999";
+// Gère les fenêtres modales (pop-ups) d'information dans l'application.
 
-  const box = document.createElement("div");
-  box.style.background = "#1f2833";
-  box.style.padding = "1rem 2rem";
-  box.style.borderRadius = "8px";
-  box.style.color = "#66fcf1";
-  box.textContent = message;
+export function showModal(message, type = "info") {
+  const modal = document.createElement("div");
+  modal.className = `modal modal-${type}`;
+  modal.innerHTML = `
+    <div class="modal-content">
+      <p>${message}</p>
+      <button class="close-modal">Fermer</button>
+    </div>
+  `;
 
-  overlay.appendChild(box);
-  overlay.addEventListener("click", () => overlay.remove());
-  document.body.appendChild(overlay);
+  document.body.appendChild(modal);
+
+  modal.querySelector(".close-modal").addEventListener("click", () => {
+    modal.remove();
+  });
+}
+
+export function showSuccess(message) {
+  showModal(`✅ ${message}`, "success");
+}
+
+export function showError(message) {
+  showModal(`❌ ${message}`, "error");
 }
