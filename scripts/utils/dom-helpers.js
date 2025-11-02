@@ -1,23 +1,27 @@
 // ==================================
 // DOM HELPERS
 // ==================================
+// Petites fonctions utilitaires pour manipuler le DOM facilement.
 
-export function createEl(tag, classes = [], text = "") {
+export function createElement(tag, className = "", content = "") {
   const el = document.createElement(tag);
-  if (Array.isArray(classes)) el.classList.add(...classes);
-  else if (classes) el.classList.add(classes);
-  if (text) el.textContent = text;
+  if (className) el.className = className;
+  if (content) el.textContent = content;
   return el;
 }
 
-export function clearEl(el) {
-  while (el.firstChild) el.removeChild(el.firstChild);
+export function clearElement(el) {
+  while (el.firstChild) {
+    el.removeChild(el.firstChild);
+  }
 }
 
-export function qs(selector) {
-  return document.querySelector(selector);
+export function appendChildren(parent, ...children) {
+  children.forEach(child => parent.appendChild(child));
 }
 
-export function qsa(selector) {
-  return Array.from(document.querySelectorAll(selector));
+export function setAttributes(el, attrs) {
+  Object.entries(attrs).forEach(([key, value]) => {
+    el.setAttribute(key, value);
+  });
 }
