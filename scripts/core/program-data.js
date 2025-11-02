@@ -1,8 +1,8 @@
 // =============================
-// PROGRAM DATA – HYBRID MASTER 51
+// PROGRAM DATA – HYBRID MASTER 51 (version globale)
 // =============================
 
-export const PROGRAM_DATA = {
+window.PROGRAM_DATA = {
   totalWeeks: 26,
   days: ["Dimanche", "Mardi", "Vendredi", "Maison"],
 
