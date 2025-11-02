@@ -1,49 +1,154 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🏋️ HYBRID MASTER 51</title>
-
-  <!-- STYLES -->
-  <link rel="stylesheet" href="/styles/01-reset.css">
-  <link rel="stylesheet" href="/styles/02-variables.css">
-  <link rel="stylesheet" href="/styles/03-base.css">
-  <link rel="stylesheet" href="/styles/04-layout.css">
-  <link rel="stylesheet" href="/styles/05-components.css">
-  <link rel="stylesheet" href="/styles/06-workout-mode.css">
-  <link rel="stylesheet" href="/styles/07-statistics.css">
-  <link rel="stylesheet" href="/styles/08-responsive.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Hybrid Master 51 - Programme complet de musculation sur 26 semaines">
+    <title>HYBRID MASTER 51 - Programme Complet</title>
+    
+    <!-- STYLES MODULAIRES - Ne pas modifier l'ordre -->
+    <link rel="stylesheet" href="styles/01-reset.css">
+    <link rel="stylesheet" href="styles/02-variables.css">
+    <link rel="stylesheet" href="styles/03-base.css">
+    <link rel="stylesheet" href="styles/04-layout.css">
+    <link rel="stylesheet" href="styles/05-components.css">
+    <link rel="stylesheet" href="styles/06-workout-mode.css">
+    <link rel="stylesheet" href="styles/07-statistics.css">
+    <link rel="stylesheet" href="styles/08-responsive.css">
+    
+    <!-- POLICES -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 </head>
-
 <body>
-  <main id="app">
-    <header class="header">
-      <h1 class="title">🏋️ HYBRID MASTER 51</h1>
-      <p class="subtitle">Programme complet 26 semaines — version WebApp</p>
-    </header>
+    <div id="app">
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="container">
+                <div class="header-content">
+                    <div class="header-left">
+                        <div class="logo">🏆</div>
+                        <div class="header-info">
+                            <h1 class="app-title">HYBRID MASTER 51</h1>
+                            <p class="app-subtitle">Programme complet 26 semaines</p>
+                        </div>
+                    </div>
+                    <div class="header-controls">
+                        <div class="week-selector">
+                            <button id="prevWeek" class="btn-nav" aria-label="Semaine précédente">◀</button>
+                            <div class="week-display">
+                                <span id="currentWeekLabel">Semaine 1</span>
+                                <span id="blockLabel" class="block-badge">Bloc 1</span>
+                            </div>
+                            <button id="nextWeek" class="btn-nav" aria-label="Semaine suivante">▶</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
 
-    <section id="navigation"></section>
-    <section id="workout-container"></section>
-  </main>
+        <!-- MAIN CONTENT -->
+        <main class="app-main">
+            <div class="container">
+                <!-- NAVIGATION JOURS -->
+                <nav class="day-navigation" role="navigation">
+                    <button class="day-tab active" data-day="dimanche">
+                        <span class="day-emoji">💪</span>
+                        <span class="day-name">Dimanche</span>
+                        <span class="day-desc">Dos + Jambes Lourdes</span>
+                    </button>
+                    <button class="day-tab" data-day="mardi">
+                        <span class="day-emoji">🔥</span>
+                        <span class="day-name">Mardi</span>
+                        <span class="day-desc">Pecs + Épaules</span>
+                    </button>
+                    <button class="day-tab" data-day="vendredi">
+                        <span class="day-emoji">⚡</span>
+                        <span class="day-name">Vendredi</span>
+                        <span class="day-desc">Dos + Jambes Légères</span>
+                    </button>
+                    <button class="day-tab" data-day="maison">
+                        <span class="day-emoji">🏠</span>
+                        <span class="day-name">Maison</span>
+                        <span class="day-desc">Hammer Curl</span>
+                    </button>
+                </nav>
 
-  <!-- SCRIPTS (modules ES6 corrigés) -->
-  <script type="module" src="/scripts/core/program-data.js"></script>
-  <script type="module" src="/scripts/core/progression-engine.js"></script>
-  <script type="module" src="/scripts/core/validation-engine.js"></script>
+                <!-- INFO CARD -->
+                <div id="infoCard" class="info-card"></div>
 
-  <script type="module" src="/scripts/modules/workout-session.js"></script>
-  <script type="module" src="/scripts/modules/timer-manager.js"></script>
-  <script type="module" src="/scripts/modules/statistics-engine.js"></script>
+                <!-- WORKOUT DISPLAY -->
+                <section id="workoutSection" class="workout-section">
+                    <div class="loading-state">
+                        <div class="spinner"></div>
+                        <p>Chargement de la séance...</p>
+                    </div>
+                </section>
 
-  <script type="module" src="/scripts/ui/workout-renderer.js"></script>
-  <script type="module" src="/scripts/ui/navigation-ui.js"></script>
-  <script type="module" src="/scripts/ui/statistics-ui.js"></script>
-  <script type="module" src="/scripts/ui/modal-manager.js"></script>
+                <!-- WARMUP SECTION -->
+                <section id="warmupSection" class="section-card"></section>
 
-  <script type="module" src="/scripts/storage/local-storage.js"></script>
-  <script type="module" src="/scripts/utils/dom-helpers.js"></script>
+                <!-- STATS SECTION -->
+                <section id="statsSection" class="section-card hidden"></section>
+            </div>
+        </main>
 
-  <script type="module" src="/scripts/main.js"></script>
+        <!-- FOOTER -->
+        <footer class="app-footer">
+            <div class="container">
+                <div class="footer-content">
+                    <div class="footer-info">
+                        <span id="lastSaveTime">Non sauvegardé</span>
+                        <span id="progressIndicator">0/26 semaines</span>
+                    </div>
+                    <div class="footer-actions">
+                        <button id="startWorkoutBtn" class="btn btn-primary">
+                            💪 Démarrer la séance
+                        </button>
+                        <button id="statsBtn" class="btn btn-secondary">
+                            📊 Statistiques
+                        </button>
+                        <button id="settingsBtn" class="btn btn-secondary">
+                            ⚙️ Paramètres
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- WORKOUT MODE MODAL -->
+    <div id="workoutModal" class="modal-overlay hidden">
+        <div class="modal-content workout-modal">
+            <!-- Contenu généré dynamiquement -->
+        </div>
+    </div>
+
+    <!-- SCRIPTS MODULAIRES - Ne pas modifier l'ordre -->
+    
+    <!-- CORE -->
+    <script src="scripts/core/program-data.js"></script>
+    <script src="scripts/core/progression-engine.js"></script>
+    <script src="scripts/core/validation-engine.js"></script>
+    
+    <!-- MODULES -->
+    <script src="scripts/modules/workout-session.js"></script>
+    <script src="scripts/modules/timer-manager.js"></script>
+    <script src="scripts/modules/statistics-engine.js"></script>
+    
+    <!-- UI -->
+    <script src="scripts/ui/workout-renderer.js"></script>
+    <script src="scripts/ui/navigation-ui.js"></script>
+    <script src="scripts/ui/modal-manager.js"></script>
+    
+    <!-- STORAGE -->
+    <script src="scripts/storage/local-storage.js"></script>
+    
+    <!-- UTILS -->
+    <script src="scripts/utils/dom-helpers.js"></script>
+    <script src="scripts/utils/error-handler.js"></script>
+    <script src="scripts/utils/accessibility.js"></script>
+    
+    <!-- APP PRINCIPAL -->
+    <script src="scripts/app.js"></script>
 </body>
 </html>
