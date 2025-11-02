@@ -1,312 +1,456 @@
-// ===================================================================
-// HYBRID MASTER 51 - MOTEUR DE RENDU DES SÉANCES
-// ===================================================================
-// Génère le HTML des séances d'entraînement
+/**
+ * WORKOUT RENDERER - Affichage des séances d'entraînement
+ * Gère l'affichage des exercices, supersets, techniques, validation
+ * Version: 1.0
+ */
 
 export class WorkoutRenderer {
-  constructor(programData, progressionEngine) {
+  constructor(container, programData) {
+    this.container = container;
     this.programData = programData;
-    this.progressionEngine = progressionEngine;
+    this.currentWorkout = null;
+    this.completedSets = new Map(); // exerciseId -> [série1, série2, ...]
   }
 
   /**
-   * Rend une semaine complète
+   * Affiche les séances d'une semaine donnée
    */
   renderWeek(weekNumber) {
-    const workouts = this.programData.weeklySchedule;
-    const container = document.createElement('div');
-    container.className = 'workout-grid';
-
-    Object.entries(workouts).forEach(([day, workout]) => {
-      const card = this.renderWorkoutCard(day, workout, weekNumber);
-      container.appendChild(card);
-    });
-
-    return container;
-  }
-
-  /**
-   * Rend une carte de séance
-   */
-  renderWorkoutCard(day, workout, weekNumber) {
-    const card = document.createElement('div');
-    card.className = 'workout-card';
-    card.dataset.day = day;
-
-    // Header
-    const header = this.createWorkoutHeader(day, workout);
-    card.appendChild(header);
-
-    // Échauffement
-    if (day !== 'maison') {
-      const warmup = this.createWarmupSection();
-      card.appendChild(warmup);
+    const weekData = this.programData.getWeekWorkouts(weekNumber);
+    if (!weekData) {
+      this.container.innerHTML = '<p class="error">Aucune donnée pour cette semaine</p>';
+      return;
     }
 
-    // Exercices
-    const exerciseList = this.createExerciseList(workout.exercises, weekNumber);
-    card.appendChild(exerciseList);
-
-    return card;
-  }
-
-  /**
-   * Crée l'en-tête d'une séance
-   */
-  createWorkoutHeader(day, workout) {
-    const header = document.createElement('div');
-    header.className = 'workout-header';
-
-    const dayIcon = this.getDayIcon(day);
-    const dayName = day.charAt(0).toUpperCase() + day.slice(1);
-
-    header.innerHTML = `
-      <h3 class="workout-day">
-        <span class="workout-icon">${dayIcon}</span>
-        ${dayName}
-      </h3>
-      <div class="workout-duration">
-        <span>⏱️</span>
-        <span>${workout.duration || '60-90min'}</span>
-      </div>
-    `;
-
-    return header;
-  }
-
-  /**
-   * Crée la section échauffement
-   */
-  createWarmupSection() {
-    const section = document.createElement('div');
-    section.className = 'warmup-section';
-    section.innerHTML = `
-      <div class="alert alert-info">
-        <span class="alert-icon">🔥</span>
-        <div class="alert-content">
-          <div class="alert-title">Échauffement</div>
-          <ul style="margin: 0; padding-left: 1.5rem; font-size: 0.875rem;">
-            <li>5-10min cardio léger</li>
-            <li>Mobilité articulaire</li>
-            <li>2 séries d'échauffement par exercice</li>
-          </ul>
+    const blockInfo = this.programData.getBlockForWeek(weekNumber);
+    
+    this.container.innerHTML = `
+      <div class="week-overview">
+        <div class="block-badge">Bloc ${blockInfo.id} : ${blockInfo.name}</div>
+        <div class="week-techniques">
+          <h3>⚡ Techniques du bloc</h3>
+          <p><strong>${blockInfo.technique.name}</strong></p>
+          <p>${blockInfo.technique.description}</p>
         </div>
       </div>
+
+      <div class="workouts-grid">
+        ${this.renderWorkoutDay('dimanche', weekData.dimanche, weekNumber)}
+        ${this.renderWorkoutDay('mardi', weekData.mardi, weekNumber)}
+        ${this.renderWorkoutDay('vendredi', weekData.vendredi, weekNumber)}
+        ${this.renderHomeWorkout(weekData.maison, weekNumber)}
+      </div>
     `;
-    return section;
+
+    this.attachEventListeners();
   }
 
   /**
-   * Crée la liste des exercices
+   * Affiche une journée d'entraînement
    */
-  createExerciseList(exercises, weekNumber) {
-    const list = document.createElement('ul');
-    list.className = 'exercise-list';
+  renderWorkoutDay(dayName, workout, weekNumber) {
+    if (!workout || !workout.exercises) return '';
 
-    exercises.forEach((exercise, index) => {
-      const item = this.createExerciseItem(exercise, weekNumber, index);
-      list.appendChild(item);
-    });
-
-    return list;
-  }
-
-  /**
-   * Crée un élément d'exercice
-   */
-  createExerciseItem(exercise, weekNumber, index) {
-    const item = document.createElement('li');
-    item.className = 'exercise-item';
-    item.dataset.exerciseIndex = index;
-
-    // Marquer les supersets
-    if (exercise.superset) {
-      item.classList.add('superset');
-    }
-
-    // Nom de l'exercice
-    const name = document.createElement('div');
-    name.className = 'exercise-name';
-    
-    // Gestion de la rotation biceps
-    let exerciseName = exercise.name;
-    if (exercise.name === 'Biceps Rotation') {
-      const isInclineWeek = this.progressionEngine.isBicepsInclineWeek(weekNumber);
-      exerciseName = isInclineWeek ? 'Incline Curl' : 'Spider Curl';
-    }
-    
-    name.textContent = exerciseName;
-    item.appendChild(name);
-
-    // Détails de l'exercice
-    const details = this.createExerciseDetails(exercise, weekNumber);
-    item.appendChild(details);
-
-    // Techniques spéciales
-    if (exercise.technique) {
-      const technique = this.createTechniqueBadge(exercise.technique);
-      item.appendChild(technique);
-    }
-
-    return item;
-  }
-
-  /**
-   * Crée les détails d'un exercice
-   */
-  createExerciseDetails(exercise, weekNumber) {
-    const details = document.createElement('div');
-    details.className = 'exercise-details';
-
-    // Calcul du poids pour cette semaine
-    const weight = this.progressionEngine.calculateWeightForWeek(
-      exercise,
-      weekNumber
-    );
-
-    // Sets
-    const sets = this.createDetailBadge('📊', `${exercise.sets} séries`);
-    details.appendChild(sets);
-
-    // Reps
-    const reps = this.createDetailBadge('🔢', exercise.reps);
-    details.appendChild(reps);
-
-    // Poids
-    if (weight) {
-      const weightBadge = this.createDetailBadge('💪', weight);
-      details.appendChild(weightBadge);
-    }
-
-    // Repos
-    if (exercise.rest) {
-      const rest = this.createDetailBadge('⏱️', exercise.rest);
-      details.appendChild(rest);
-    }
-
-    // Tempo
-    if (exercise.tempo) {
-      const tempo = this.createDetailBadge('⏲️', `Tempo: ${exercise.tempo}`);
-      details.appendChild(tempo);
-    }
-
-    return details;
-  }
-
-  /**
-   * Crée un badge de détail
-   */
-  createDetailBadge(icon, text) {
-    const badge = document.createElement('span');
-    badge.className = 'detail-badge';
-    badge.innerHTML = `
-      <span>${icon}</span>
-      <span>${text}</span>
-    `;
-    return badge;
-  }
-
-  /**
-   * Crée un badge de technique
-   */
-  createTechniqueBadge(technique) {
-    const badge = document.createElement('div');
-    badge.className = 'technique-badge';
-    badge.textContent = technique;
-    return badge;
-  }
-
-  /**
-   * Retourne l'icône pour un jour
-   */
-  getDayIcon(day) {
-    const icons = {
-      dimanche: '🏋️',
-      mardi: '💪',
-      jeudi: '🔥',
-      maison: '🏠'
+    const dayLabels = {
+      dimanche: 'Dimanche',
+      mardi: 'Mardi',
+      vendredi: 'Vendredi'
     };
-    return icons[day] || '💪';
+
+    const totalSets = workout.exercises.reduce((sum, ex) => sum + ex.sets, 0);
+    const duration = workout.duration || this.estimateDuration(workout.exercises);
+
+    return `
+      <div class="workout-card" data-day="${dayName}">
+        <div class="workout-header">
+          <h3>${dayLabels[dayName]}</h3>
+          <div class="workout-meta">
+            <span class="badge">⏱️ ${duration} min</span>
+            <span class="badge">📊 ${totalSets} séries</span>
+          </div>
+        </div>
+
+        <div class="workout-focus">
+          <strong>Focus :</strong> ${workout.name}
+        </div>
+
+        <div class="exercises-list">
+          ${this.renderExercises(workout.exercises, weekNumber, dayName)}
+        </div>
+
+        <button class="btn-start-workout" data-day="${dayName}" data-week="${weekNumber}">
+          🏋️ Démarrer la séance
+        </button>
+      </div>
+    `;
   }
 
   /**
-   * Rend les statistiques de volume par muscle
+   * Affiche la séance maison (Hammer Curl)
    */
-  renderVolumeStats(weekNumber) {
-    const stats = this.calculateVolumeStats(weekNumber);
+  renderHomeWorkout(workout, weekNumber) {
+    if (!workout) return '';
+
+    return `
+      <div class="workout-card workout-home">
+        <div class="workout-header">
+          <h3>🏠 Séance Maison</h3>
+          <div class="workout-meta">
+            <span class="badge">⏱️ 10 min</span>
+            <span class="badge">Mardi OU Jeudi soir</span>
+          </div>
+        </div>
+
+        <div class="exercises-list">
+          ${workout.exercises.map((ex, idx) => `
+            <div class="exercise-item">
+              <div class="exercise-name">
+                <span class="exercise-number">${idx + 1}.</span>
+                ${ex.name}
+              </div>
+              <div class="exercise-specs">
+                <span class="badge">${ex.sets}×${ex.reps}</span>
+                <span class="badge">Repos: ${ex.rest}s</span>
+              </div>
+              ${ex.notes ? `<p class="exercise-notes">${ex.notes}</p>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Affiche la liste des exercices avec gestion des supersets
+   */
+  renderExercises(exercises, weekNumber, dayName) {
+    const grouped = this.groupSupersets(exercises);
     
-    const container = document.createElement('div');
-    container.className = 'volume-chart';
-    container.innerHTML = '<h4 class="volume-chart-title">📊 Volume par Groupe Musculaire</h4>';
+    return grouped.map((group, groupIdx) => {
+      if (group.isSuperset) {
+        return this.renderSuperset(group.exercises, weekNumber, dayName, groupIdx);
+      } else {
+        return this.renderSingleExercise(group.exercises[0], weekNumber, dayName, groupIdx);
+      }
+    }).join('');
+  }
 
-    Object.entries(stats).forEach(([muscle, volume]) => {
-      const maxVolume = Math.max(...Object.values(stats));
-      const percentage = (volume / maxVolume) * 100;
+  /**
+   * Groupe les exercices en supersets
+   */
+  groupSupersets(exercises) {
+    const groups = [];
+    let currentSuperset = null;
 
-      const bar = document.createElement('div');
-      bar.className = 'muscle-group-bar';
-      bar.innerHTML = `
-        <div class="muscle-group-header">
-          <span class="muscle-group-name">${muscle}</span>
-          <span class="muscle-group-value">${volume} séries</span>
-        </div>
-        <div class="bar-container">
-          <div class="bar-fill" style="width: ${percentage}%"></div>
-        </div>
-      `;
-      container.appendChild(bar);
+    exercises.forEach(ex => {
+      if (ex.superset) {
+        if (!currentSuperset) {
+          currentSuperset = { isSuperset: true, exercises: [] };
+        }
+        currentSuperset.exercises.push(ex);
+      } else {
+        if (currentSuperset) {
+          groups.push(currentSuperset);
+          currentSuperset = null;
+        }
+        groups.push({ isSuperset: false, exercises: [ex] });
+      }
     });
 
-    return container;
+    if (currentSuperset) {
+      groups.push(currentSuperset);
+    }
+
+    return groups;
   }
 
   /**
-   * Calcule les statistiques de volume
+   * Affiche un superset (2+ exercices enchaînés)
    */
-  calculateVolumeStats(weekNumber) {
-    const stats = {};
-    const workouts = this.programData.weeklySchedule;
+  renderSuperset(exercises, weekNumber, dayName, groupIdx) {
+    return `
+      <div class="exercise-superset">
+        <div class="superset-badge">🔗 SUPERSET</div>
+        ${exercises.map((ex, idx) => `
+          <div class="exercise-item" data-exercise-id="${ex.id}">
+            <div class="exercise-header">
+              <div class="exercise-name">
+                <span class="exercise-number">${groupIdx + 1}${String.fromCharCode(97 + idx)}.</span>
+                ${ex.name}
+              </div>
+              <div class="exercise-specs">
+                <span class="badge">${ex.sets}×${ex.reps}</span>
+                ${ex.rir !== undefined ? `<span class="badge">RIR ${ex.rir}</span>` : ''}
+                <span class="badge">Poids: ${ex.weight}kg</span>
+              </div>
+            </div>
+            ${ex.notes ? `<p class="exercise-notes">${ex.notes}</p>` : ''}
+          </div>
+        `).join('')}
+        <div class="superset-rest">
+          Repos après superset : ${exercises[0].rest}s
+        </div>
+      </div>
+    `;
+  }
 
-    Object.values(workouts).forEach(workout => {
-      workout.exercises.forEach(exercise => {
-        const muscle = this.getMuscleGroup(exercise.name);
-        if (!stats[muscle]) stats[muscle] = 0;
-        stats[muscle] += exercise.sets;
+  /**
+   * Affiche un exercice simple
+   */
+  renderSingleExercise(exercise, weekNumber, dayName, groupIdx) {
+    return `
+      <div class="exercise-item" data-exercise-id="${exercise.id}">
+        <div class="exercise-header">
+          <div class="exercise-name">
+            <span class="exercise-number">${groupIdx + 1}.</span>
+            ${exercise.name}
+          </div>
+          <div class="exercise-specs">
+            <span class="badge">${exercise.sets}×${exercise.reps}</span>
+            ${exercise.rir !== undefined ? `<span class="badge">RIR ${exercise.rir}</span>` : ''}
+            <span class="badge">Poids: ${exercise.weight}kg</span>
+            <span class="badge">Repos: ${exercise.rest}s</span>
+          </div>
+        </div>
+        ${exercise.notes ? `<p class="exercise-notes">${exercise.notes}</p>` : ''}
+      </div>
+    `;
+  }
+
+  /**
+   * Mode séance active avec validation des séries
+   */
+  startWorkoutMode(dayName, weekNumber) {
+    const weekData = this.programData.getWeekWorkouts(weekNumber);
+    const workout = weekData[dayName];
+    
+    if (!workout) return;
+
+    this.currentWorkout = { day: dayName, week: weekNumber, workout };
+    this.completedSets.clear();
+
+    this.container.innerHTML = `
+      <div class="workout-mode-header">
+        <button class="btn-back" id="exitWorkoutMode">← Retour</button>
+        <h2>${this.getDayLabel(dayName)} - Semaine ${weekNumber}</h2>
+        <div class="workout-progress">
+          <span id="completedSets">0</span>/${workout.exercises.reduce((sum, ex) => sum + ex.sets, 0)} séries
+        </div>
+      </div>
+
+      <div class="workout-mode-content">
+        ${workout.exercises.map((ex, idx) => this.renderActiveExercise(ex, idx)).join('')}
+      </div>
+
+      <button class="btn-complete-workout" id="completeWorkout">
+        ✅ Terminer la séance
+      </button>
+    `;
+
+    this.attachWorkoutModeListeners();
+  }
+
+  /**
+   * Affiche un exercice en mode actif avec validation
+   */
+  renderActiveExercise(exercise, index) {
+    const sets = Array.from({ length: exercise.sets }, (_, i) => i + 1);
+    
+    return `
+      <div class="active-exercise" data-exercise-id="${exercise.id}">
+        <div class="active-exercise-header">
+          <h3>${index + 1}. ${exercise.name}</h3>
+          <div class="active-exercise-specs">
+            <span>${exercise.sets}×${exercise.reps}</span>
+            <span>Poids: ${exercise.weight}kg</span>
+            ${exercise.rir !== undefined ? `<span>RIR ${exercise.rir}</span>` : ''}
+          </div>
+        </div>
+
+        ${exercise.notes ? `<p class="exercise-notes">${exercise.notes}</p>` : ''}
+
+        <div class="sets-validation">
+          ${sets.map(setNum => `
+            <div class="set-item" data-set="${setNum}">
+              <span class="set-number">Série ${setNum}</span>
+              <input type="number" 
+                     class="set-reps-input" 
+                     placeholder="Reps" 
+                     data-exercise="${exercise.id}" 
+                     data-set="${setNum}">
+              <button class="btn-validate-set" 
+                      data-exercise="${exercise.id}" 
+                      data-set="${setNum}">
+                ✓
+              </button>
+              <button class="btn-start-timer" 
+                      data-rest="${exercise.rest}">
+                ⏱️ ${exercise.rest}s
+              </button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Estime la durée d'une séance
+   */
+  estimateDuration(exercises) {
+    const totalSets = exercises.reduce((sum, ex) => sum + ex.sets, 0);
+    const avgSetTime = 45; // secondes par série
+    const avgRest = exercises.reduce((sum, ex) => sum + ex.rest, 0) / exercises.length;
+    
+    return Math.round((totalSets * (avgSetTime + avgRest)) / 60);
+  }
+
+  /**
+   * Retourne le label français d'un jour
+   */
+  getDayLabel(dayName) {
+    const labels = {
+      dimanche: 'Dimanche',
+      mardi: 'Mardi',
+      vendredi: 'Vendredi',
+      maison: 'Séance Maison'
+    };
+    return labels[dayName] || dayName;
+  }
+
+  /**
+   * Attache les écouteurs d'événements (mode aperçu)
+   */
+  attachEventListeners() {
+    this.container.querySelectorAll('.btn-start-workout').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const day = e.target.dataset.day;
+        const week = parseInt(e.target.dataset.week);
+        this.startWorkoutMode(day, week);
+      });
+    });
+  }
+
+  /**
+   * Attache les écouteurs d'événements (mode séance)
+   */
+  attachWorkoutModeListeners() {
+    // Bouton retour
+    document.getElementById('exitWorkoutMode')?.addEventListener('click', () => {
+      if (this.currentWorkout) {
+        this.renderWeek(this.currentWorkout.week);
+      }
+    });
+
+    // Validation des séries
+    this.container.querySelectorAll('.btn-validate-set').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const exerciseId = e.target.dataset.exercise;
+        const setNum = parseInt(e.target.dataset.set);
+        const input = this.container.querySelector(
+          `input[data-exercise="${exerciseId}"][data-set="${setNum}"]`
+        );
+        
+        if (input && input.value) {
+          this.validateSet(exerciseId, setNum, parseInt(input.value));
+          e.target.classList.add('validated');
+          e.target.textContent = '✓';
+          input.disabled = true;
+        }
       });
     });
 
-    return stats;
+    // Timers de repos
+    this.container.querySelectorAll('.btn-start-timer').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const restTime = parseInt(e.target.dataset.rest);
+        this.startRestTimer(e.target, restTime);
+      });
+    });
+
+    // Terminer la séance
+    document.getElementById('completeWorkout')?.addEventListener('click', () => {
+      this.completeWorkout();
+    });
   }
 
   /**
-   * Détermine le groupe musculaire d'un exercice
+   * Valide une série complétée
    */
-  getMuscleGroup(exerciseName) {
-    const mapping = {
-      'Trap Bar': 'Jambes',
-      'Split Squat': 'Jambes',
-      'Leg Curl': 'Jambes',
-      'Calf': 'Mollets',
-      'Press': 'Pectoraux',
-      'Bench': 'Pectoraux',
-      'Fly': 'Pectoraux',
-      'Row': 'Dos',
-      'Pull': 'Dos',
-      'Lat': 'Dos',
-      'Overhead': 'Épaules',
-      'Lateral': 'Épaules',
-      'Curl': 'Biceps',
-      'Extension': 'Triceps',
-      'Dips': 'Triceps',
-      'Cable Crunch': 'Abdos',
-      'Crunch': 'Abdos',
-      'Plank': 'Abdos'
+  validateSet(exerciseId, setNum, reps) {
+    if (!this.completedSets.has(exerciseId)) {
+      this.completedSets.set(exerciseId, []);
+    }
+    
+    this.completedSets.get(exerciseId)[setNum - 1] = reps;
+    
+    // Mettre à jour le compteur
+    const totalCompleted = Array.from(this.completedSets.values())
+      .flat()
+      .filter(v => v !== undefined).length;
+    
+    const counter = document.getElementById('completedSets');
+    if (counter) {
+      counter.textContent = totalCompleted;
+    }
+  }
+
+  /**
+   * Démarre un timer de repos
+   */
+  startRestTimer(button, seconds) {
+    let remaining = seconds;
+    button.disabled = true;
+    
+    const interval = setInterval(() => {
+      remaining--;
+      button.textContent = `⏱️ ${remaining}s`;
+      
+      if (remaining <= 0) {
+        clearInterval(interval);
+        button.textContent = `⏱️ ${seconds}s`;
+        button.disabled = false;
+        
+        // Notification sonore (optionnelle)
+        if ('Audio' in window) {
+          const beep = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBCx+zPLTgjMGHm7A7+OZTR4NW';
+          beep.play().catch(() => {});
+        }
+      }
+    }, 1000);
+  }
+
+  /**
+   * Termine la séance et sauvegarde les données
+   */
+  completeWorkout() {
+    if (!this.currentWorkout) return;
+
+    const workoutData = {
+      date: new Date().toISOString(),
+      week: this.currentWorkout.week,
+      day: this.currentWorkout.day,
+      completed: true,
+      sets: Object.fromEntries(this.completedSets)
     };
 
-    for (const [key, value] of Object.entries(mapping)) {
-      if (exerciseName.includes(key)) return value;
-    }
+    // Émettre un événement personnalisé pour que app.js puisse sauvegarder
+    const event = new CustomEvent('workoutCompleted', { detail: workoutData });
+    document.dispatchEvent(event);
 
-    return 'Autre';
+    // Afficher un message de succès
+    this.container.innerHTML = `
+      <div class="workout-complete-message">
+        <h2>🎉 Séance terminée !</h2>
+        <p>Excellent travail ! Tes données ont été sauvegardées.</p>
+        <button class="btn-primary" id="returnToOverview">
+          Retour à l'aperçu
+        </button>
+      </div>
+    `;
+
+    document.getElementById('returnToOverview')?.addEventListener('click', () => {
+      this.renderWeek(this.currentWorkout.week);
+    });
   }
 }
