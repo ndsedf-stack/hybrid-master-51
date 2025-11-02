@@ -67,6 +67,34 @@
     <!-- Détails Séance -->
     <section class="workout-details" id="workoutDetails"></section>
 
+    <!-- ✅ NOUVELLE SECTION : Statistiques avec graphiques -->
+    <!-- Section Statistiques -->
+    <section class="statistics-section">
+      <h2 class="section-title">📊 Statistiques</h2>
+      
+      <!-- Rapport de progression -->
+      <div id="progressReport"></div>
+      
+      <!-- Graphiques -->
+      <div class="charts-grid">
+        <div class="chart-container">
+          <canvas id="progressionChart"></canvas>
+        </div>
+        <div class="chart-container">
+          <canvas id="volumeByMuscleChart"></canvas>
+        </div>
+        <div class="chart-container">
+          <canvas id="blockDistributionChart"></canvas>
+        </div>
+        <div class="chart-container">
+          <canvas id="frequencyChart"></canvas>
+        </div>
+        <div class="chart-container">
+          <canvas id="keyExercisesChart"></canvas>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- FOOTER -->
@@ -75,6 +103,9 @@
       <p>&copy; 2024 Hybrid Master 51</p>
     </div>
   </footer>
+
+  <!-- ✅ Chart.js pour les graphiques -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
   <!-- ✅ JAVASCRIPT - TYPE MODULE OBLIGATOIRE -->
   <script type="module" src="./scripts/app.js"></script>
