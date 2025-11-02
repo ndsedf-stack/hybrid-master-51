@@ -26,6 +26,9 @@ class HybridMasterApp {
     // Initialiser les modules
     this.initializeModules();
     
+    // ⭐⭐ AJOUT CRITIQUE : Attacher les événements des boutons
+    this.attachButtonEvents();
+    
     // Charger les données sauvegardées
     this.loadUserData();
     
@@ -36,6 +39,40 @@ class HybridMasterApp {
     this.validateProgram();
     
     console.log('✅ Application initialisée avec succès');
+  }
+
+  /**
+   * Attacher les événements aux boutons de navigation
+   */
+  attachButtonEvents() {
+    try {
+      // Attacher l'événement au bouton Précédent
+      const prevButton = document.getElementById('prevWeek');
+      if (prevButton) {
+        prevButton.addEventListener('click', () => {
+          console.log('← Bouton Précédent cliqué');
+          this.prevWeek();
+        });
+        console.log('✅ Événement attaché sur bouton Précédent');
+      } else {
+        console.error('❌ Bouton Précédent non trouvé');
+      }
+
+      // Attacher l'événement au bouton Suivant
+      const nextButton = document.getElementById('nextWeek');
+      if (nextButton) {
+        nextButton.addEventListener('click', () => {
+          console.log('→ Bouton Suivant cliqué');
+          this.nextWeek();
+        });
+        console.log('✅ Événement attaché sur bouton Suivant');
+      } else {
+        console.error('❌ Bouton Suivant non trouvé');
+      }
+
+    } catch (error) {
+      console.error('❌ Erreur attachement événements:', error);
+    }
   }
 
   /**
